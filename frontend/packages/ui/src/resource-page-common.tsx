@@ -159,12 +159,6 @@ export interface ResourcePageProps {
   inlineCards?: ReactNode
   /** Platform-specific actions rendered in the site header right side */
   rightActions?: ReactNode
-  /** Callback to delete a comment (desktop only) */
-  onCommentDelete?: (commentId: string, signingAccountId?: string) => void
-  /** Current account UID for ownership checks (desktop only) */
-  currentAccountId?: string
-  /** Dialog content for delete comment confirmation (desktop only) */
-  deleteCommentDialogContent?: ReactNode
 }
 
 /** Get panel title for display */
@@ -194,9 +188,6 @@ export function ResourcePage({
   pageFooter,
   inlineCards,
   rightActions,
-  onCommentDelete,
-  currentAccountId,
-  deleteCommentDialogContent,
 }: ResourcePageProps) {
   // Load document data via React Query (hydrated from SSR prefetch)
   const resource = useResource(docId, {
@@ -277,9 +268,6 @@ export function ResourcePage({
         commentId={docId}
         CommentEditor={CommentEditor}
         pageFooter={pageFooter}
-        currentAccountId={currentAccountId}
-        onCommentDelete={onCommentDelete}
-        deleteCommentDialogContent={deleteCommentDialogContent}
       />
     )
   }
@@ -316,9 +304,6 @@ export function ResourcePage({
         collaboratorForm={collaboratorForm}
         pageFooter={pageFooter}
         inlineCards={inlineCards}
-        currentAccountId={currentAccountId}
-        onCommentDelete={onCommentDelete}
-        deleteCommentDialogContent={deleteCommentDialogContent}
       />
     </PageWrapper>
   )
@@ -330,17 +315,11 @@ function CommentResourcePage({
   commentId,
   CommentEditor,
   pageFooter,
-  currentAccountId,
-  onCommentDelete,
-  deleteCommentDialogContent,
 }: {
   comment: HMComment
   commentId: UnpackedHypermediaId
   CommentEditor?: React.ComponentType<CommentEditorProps>
   pageFooter?: ReactNode
-  currentAccountId?: string
-  onCommentDelete?: (commentId: string, signingAccountId?: string) => void
-  deleteCommentDialogContent?: ReactNode
 }) {
   const targetDocId = getCommentTargetId(comment)
 
@@ -399,9 +378,6 @@ function CommentResourcePage({
         CommentEditor={CommentEditor}
         siteUrl={siteHomeDocument?.metadata?.siteUrl}
         pageFooter={pageFooter}
-        currentAccountId={currentAccountId}
-        onCommentDelete={onCommentDelete}
-        deleteCommentDialogContent={deleteCommentDialogContent}
       />
     </PageWrapper>
   )
@@ -416,9 +392,6 @@ function CommentPageBody({
   CommentEditor,
   siteUrl,
   pageFooter,
-  currentAccountId,
-  onCommentDelete,
-  deleteCommentDialogContent,
 }: {
   docId: UnpackedHypermediaId
   document: HMDocument
@@ -427,9 +400,6 @@ function CommentPageBody({
   CommentEditor?: React.ComponentType<CommentEditorProps>
   siteUrl?: string
   pageFooter?: ReactNode
-  currentAccountId?: string
-  onCommentDelete?: (commentId: string, signingAccountId?: string) => void
-  deleteCommentDialogContent?: ReactNode
 }) {
   const interactionSummary = useInteractionSummary(docId)
 
@@ -534,14 +504,11 @@ function CommentPageBody({
             }
           />
         </div>
-        {deleteCommentDialogContent}
         <DiscussionsPageContent
           docId={docId}
           openComment={openComment}
           contentMaxWidth={contentMaxWidth}
           targetDomain={siteUrl}
-          currentAccountId={currentAccountId}
-          onCommentDelete={onCommentDelete}
           commentEditor={CommentEditor ? <CommentEditor docId={docId} autoFocus /> : undefined}
         />
         {pageFooter ? <div className="mt-auto">{pageFooter}</div> : null}
@@ -673,9 +640,6 @@ function DocumentBody({
   collaboratorForm,
   pageFooter,
   inlineCards,
-  currentAccountId,
-  onCommentDelete,
-  deleteCommentDialogContent,
 }: {
   docId: UnpackedHypermediaId
   document: HMDocument
@@ -689,9 +653,6 @@ function DocumentBody({
   collaboratorForm?: ReactNode
   pageFooter?: ReactNode
   inlineCards?: ReactNode
-  currentAccountId?: string
-  onCommentDelete?: (commentId: string, signingAccountId?: string) => void
-  deleteCommentDialogContent?: ReactNode
 }) {
   const route = useNavRoute()
   const navigate = useNavigate()
@@ -1099,9 +1060,6 @@ function DocumentBody({
           collaboratorForm={collaboratorForm}
           siteUrl={siteUrl}
           inlineCards={inlineCards}
-          currentAccountId={currentAccountId}
-          onCommentDelete={onCommentDelete}
-          deleteCommentDialogContent={deleteCommentDialogContent}
         />
       </div>
       {pageFooter ? <div className="mt-auto">{pageFooter}</div> : null}
@@ -1136,15 +1094,12 @@ function DocumentBody({
         {floatingButtons}
         {mobilePanelOpen && (
           <MobilePanelSheet isOpen={mobilePanelOpen} title={getPanelTitle(panelKey)} onClose={handlePanelClose}>
-            {deleteCommentDialogContent}
             <DiscussionsPageContent
               docId={docId}
               showTitle={false}
               showOpenInPanel={false}
               contentMaxWidth={contentMaxWidth}
               targetDomain={siteUrl}
-              currentAccountId={currentAccountId}
-              onCommentDelete={onCommentDelete}
               openComment={panelRoute?.key === 'comments' ? panelRoute.openComment : undefined}
               targetBlockId={panelRoute?.key === 'comments' ? panelRoute.targetBlockId : undefined}
               blockId={panelRoute?.key === 'comments' ? panelRoute.blockId : undefined}
@@ -1176,9 +1131,6 @@ function DocumentBody({
         contentMaxWidth={contentMaxWidth}
         CommentEditor={CommentEditor}
         siteUrl={siteUrl}
-        currentAccountId={currentAccountId}
-        onCommentDelete={onCommentDelete}
-        deleteCommentDialogContent={deleteCommentDialogContent}
       />
     </ScrollArea>
   ) : null
@@ -1222,60 +1174,42 @@ function PanelContentRenderer({
   contentMaxWidth,
   CommentEditor,
   siteUrl,
-  currentAccountId,
-  onCommentDelete,
-  deleteCommentDialogContent,
 }: {
   panelRoute: DocumentPanelRoute
   docId: UnpackedHypermediaId
   contentMaxWidth: number
   CommentEditor?: React.ComponentType<CommentEditorProps>
   siteUrl?: string
-  currentAccountId?: string
-  onCommentDelete?: (commentId: string, signingAccountId?: string) => void
-  deleteCommentDialogContent?: ReactNode
 }) {
   switch (panelRoute.key) {
     case 'activity':
       return (
-        <Feed
-          size="sm"
-          filterResource={docId.id}
-          filterEventType={panelRoute.filterEventType}
-          targetDomain={siteUrl}
-          currentAccount={currentAccountId}
-          onCommentDelete={onCommentDelete}
-        />
+        <Feed size="sm" filterResource={docId.id} filterEventType={panelRoute.filterEventType} targetDomain={siteUrl} />
       )
     case 'comments':
       return (
-        <>
-          {deleteCommentDialogContent}
-          <DiscussionsPageContent
-            docId={docId}
-            showTitle={false}
-            showOpenInPanel={false}
-            contentMaxWidth={contentMaxWidth}
-            targetDomain={siteUrl}
-            currentAccountId={currentAccountId}
-            onCommentDelete={onCommentDelete}
-            openComment={panelRoute.openComment}
-            targetBlockId={panelRoute.targetBlockId}
-            blockId={panelRoute.blockId}
-            blockRange={panelRoute.blockRange}
-            commentEditor={
-              CommentEditor ? (
-                <CommentEditor
-                  docId={docId}
-                  quotingBlockId={panelRoute.targetBlockId}
-                  commentId={panelRoute.openComment}
-                  isReplying={!!panelRoute.openComment}
-                  autoFocus
-                />
-              ) : undefined
-            }
-          />
-        </>
+        <DiscussionsPageContent
+          docId={docId}
+          showTitle={false}
+          showOpenInPanel={false}
+          contentMaxWidth={contentMaxWidth}
+          targetDomain={siteUrl}
+          openComment={panelRoute.openComment}
+          targetBlockId={panelRoute.targetBlockId}
+          blockId={panelRoute.blockId}
+          blockRange={panelRoute.blockRange}
+          commentEditor={
+            CommentEditor ? (
+              <CommentEditor
+                docId={docId}
+                quotingBlockId={panelRoute.targetBlockId}
+                commentId={panelRoute.openComment}
+                isReplying={!!panelRoute.openComment}
+                autoFocus
+              />
+            ) : undefined
+          }
+        />
       )
     case 'directory':
       return <DirectoryPageContent docId={docId} showTitle={false} contentMaxWidth={contentMaxWidth} />
@@ -1313,9 +1247,6 @@ function MainContent({
   collaboratorForm,
   siteUrl,
   inlineCards,
-  currentAccountId,
-  onCommentDelete,
-  deleteCommentDialogContent,
 }: {
   docId: UnpackedHypermediaId
   resourceId: UnpackedHypermediaId
@@ -1349,9 +1280,6 @@ function MainContent({
   collaboratorForm?: ReactNode
   siteUrl?: string
   inlineCards?: ReactNode
-  currentAccountId?: string
-  onCommentDelete?: (commentId: string, signingAccountId?: string) => void
-  deleteCommentDialogContent?: ReactNode
 }) {
   switch (activeView) {
     case 'directory':
@@ -1374,41 +1302,34 @@ function MainContent({
             filterResource={docId.id}
             filterEventType={activityFilterEventType || []}
             targetDomain={siteUrl}
-            currentAccount={currentAccountId}
-            onCommentDelete={onCommentDelete}
           />
         </PageLayout>
       )
 
     case 'comments':
       return (
-        <>
-          {deleteCommentDialogContent}
-          <DiscussionsPageContent
-            docId={docId}
-            showTitle={false}
-            showOpenInPanel={false}
-            contentMaxWidth={contentMaxWidth}
-            targetDomain={siteUrl}
-            currentAccountId={currentAccountId}
-            onCommentDelete={onCommentDelete}
-            openComment={discussionsParams?.openComment}
-            targetBlockId={discussionsParams?.targetBlockId}
-            blockId={discussionsParams?.blockId}
-            blockRange={discussionsParams?.blockRange}
-            commentEditor={
-              CommentEditor ? (
-                <CommentEditor
-                  docId={docId}
-                  quotingBlockId={discussionsParams?.targetBlockId}
-                  commentId={discussionsParams?.openComment}
-                  isReplying={!!discussionsParams?.openComment}
-                  autoFocus={discussionsParams?.autoFocus}
-                />
-              ) : undefined
-            }
-          />
-        </>
+        <DiscussionsPageContent
+          docId={docId}
+          showTitle={false}
+          showOpenInPanel={false}
+          contentMaxWidth={contentMaxWidth}
+          targetDomain={siteUrl}
+          openComment={discussionsParams?.openComment}
+          targetBlockId={discussionsParams?.targetBlockId}
+          blockId={discussionsParams?.blockId}
+          blockRange={discussionsParams?.blockRange}
+          commentEditor={
+            CommentEditor ? (
+              <CommentEditor
+                docId={docId}
+                quotingBlockId={discussionsParams?.targetBlockId}
+                commentId={discussionsParams?.openComment}
+                isReplying={!!discussionsParams?.openComment}
+                autoFocus={discussionsParams?.autoFocus}
+              />
+            ) : undefined
+          }
+        />
       )
 
     case 'content':
