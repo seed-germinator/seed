@@ -22,7 +22,7 @@ import {useNavigate, useNavRoute} from '@shm/shared/utils/navigation'
 import {Folder} from 'lucide-react'
 import {CSSProperties, ReactNode, useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {BlockRangeSelectOptions, BlocksContent, BlocksContentProvider} from './blocks-content'
-import {DocumentCollaborators} from './collaborators-page'
+import {AddCollaboratorForm, DocumentCollaborators} from './collaborators-page'
 import {ScrollArea} from './components/scroll-area'
 import {copyUrlToClipboardWithFeedback} from './copy-to-clipboard'
 import {DirectoryPageContent} from './directory-page'
@@ -149,8 +149,6 @@ export interface ResourcePageProps {
   editActions?: ReactNode
   /** Existing draft info for showing draft indicator in toolbar */
   existingDraft?: HMExistingDraft | false
-  /** Platform-specific collaborator form (e.g. invite form on desktop) */
-  collaboratorForm?: ReactNode
   /** Platform-specific page footer (web only) */
   pageFooter?: ReactNode
 
@@ -184,7 +182,6 @@ export function ResourcePage({
   editActions,
   existingDraft,
   floatingButtons,
-  collaboratorForm,
   pageFooter,
   inlineCards,
   rightActions,
@@ -301,7 +298,6 @@ export function ResourcePage({
         editActions={editActions}
         existingDraft={existingDraft}
         floatingButtons={floatingButtons}
-        collaboratorForm={collaboratorForm}
         pageFooter={pageFooter}
         inlineCards={inlineCards}
       />
@@ -637,7 +633,6 @@ function DocumentBody({
   editActions,
   existingDraft,
   floatingButtons,
-  collaboratorForm,
   pageFooter,
   inlineCards,
 }: {
@@ -650,7 +645,6 @@ function DocumentBody({
   editActions?: ReactNode
   existingDraft?: HMExistingDraft | false
   floatingButtons?: ReactNode
-  collaboratorForm?: ReactNode
   pageFooter?: ReactNode
   inlineCards?: ReactNode
 }) {
@@ -1057,7 +1051,6 @@ function DocumentBody({
           onBlockSelect={handleBlockSelect}
           CommentEditor={CommentEditor}
           directory={directory.data}
-          collaboratorForm={collaboratorForm}
           siteUrl={siteUrl}
           inlineCards={inlineCards}
         />
@@ -1244,7 +1237,6 @@ function MainContent({
   onBlockSelect,
   CommentEditor,
   directory,
-  collaboratorForm,
   siteUrl,
   inlineCards,
 }: {
@@ -1277,7 +1269,6 @@ function MainContent({
   onBlockSelect?: (blockId: string, opts?: BlockRangeSelectOptions) => void
   CommentEditor?: React.ComponentType<CommentEditorProps>
   directory?: import('@shm/shared').HMDocumentInfo[]
-  collaboratorForm?: ReactNode
   siteUrl?: string
   inlineCards?: ReactNode
 }) {
@@ -1288,7 +1279,7 @@ function MainContent({
     case 'collaborators':
       return (
         <PageLayout contentMaxWidth={contentMaxWidth}>
-          {collaboratorForm}
+          <AddCollaboratorForm id={docId} />
           <DocumentCollaborators docId={docId} />
         </PageLayout>
       )
